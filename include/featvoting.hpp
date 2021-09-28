@@ -10,6 +10,7 @@ public:
 
   ACTION reguser(name user);
   ACTION submitfeat(name user, string title);
+  ACTION apprfeatvote(name author);
   ACTION erasefeats();
 
 private:
@@ -26,6 +27,14 @@ private:
     uint64_t primary_key() const {return author.value;};
   };
 
+  TABLE votingfeats {
+    name author;
+    string title;
+    uint64_t primary_key() const {return author.value;};
+  };
+
   typedef multi_index<name("users"), users> users_table;
   typedef multi_index<name("feats"), feats> feats_table;
+  typedef multi_index<name("votingfeats"), votingfeats> votingfeats_table;
+
 };

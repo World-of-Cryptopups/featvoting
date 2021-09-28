@@ -56,6 +56,57 @@ ACTION featvoting::apprfeatvote(name author) {
   });
 }
 
+ACTION featvoting::dapprfeatvote(name author) {
+  require_auth(get_self());  
+
+  feats_table _feats(get_self(), get_first_receiver().value);
+  votingfeats_table _vfeats(get_self(), get_first_receiver().value);
+
+  auto _vfeats_it = _vfeats.find(author.value);
+
+  check(_vfeats_it != _vfeats.end(), "Author's feature does not exist!");
+  check(_feats.find(author.value) == _feats.end(), "Author's feature has already been approved for voting.");
+  
+  // erase from submissions
+  _vfeats.erase(_vfeats_it);
+
+  // add to approved feats for voting
+  _feats.emplace(get_self(), [&](auto &row){
+    row.author = author;
+    row.title = _vfeats_it->title;
+  });
+}
+
+
+ACTION featvoting::vote(name user, name author) {
+  require_auth(user);
+
+  votingfeats_table _vfeats(get_self(), get_first_receiver().value);
+  cvoting_table _cv(get_self(), get_first_receiver().value);
+
+  auto _vfeats_it = _vfeats.find(author.value);
+
+  check(_vfeats_it != _vfeats.end(), "Author's feature does not exist!");
+  check(_cv.find(user.value) == _cv.end(), "You have already voted a feature request!");  
+
+  _cv.emplace(get_self(), [&](auto &row){
+    row.user = user;
+    row.feat_author = _vfeats_it->author;
+  });
+}
+
+
+ACTION featvoting::erasevfeats() {
+  require_auth(get_self());
+
+  votingfeats_table _feats(get_self(), get_self().value);
+
+  // Delete all records in _feats table
+  auto itr = _feats.begin();
+  while (itr != _feats.end()){
+    itr = _feats.erase(itr);
+  }
+}
 
 ACTION featvoting::erasefeats() {
   require_auth(get_self());
@@ -69,4 +120,4 @@ ACTION featvoting::erasefeats() {
   }
 }
 
-EOSIO_DISPATCH(featvoting, (reguser)(submitfeat)(erasefeats)(apprfeatvote))
+EOSIO_DISPATCH(featvoting, (reguser)(submitfeat)(erasefeats)(apprfeatvote)(dapprfeatvote)(vote)(erasevfeats))

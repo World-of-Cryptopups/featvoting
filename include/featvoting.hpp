@@ -95,6 +95,7 @@ private:
   typedef multi_index<"currentvotes"_n, cvotes_s, indexed_by<"user"_n, const_mem_fun<cvotes_s, uint64_t, &cvotes_s::by_user>>, indexed_by<"pollid"_n, const_mem_fun<cvotes_s, uint64_t, &cvotes_s::by_pollid>>> cvotes_t;
   typedef multi_index<"polls"_n, polls_s> polls_t;
   typedef singleton<"config"_n, config_s> config_t;
+  typedef multi_index<"config"_n, config_s> config_t_abi;
 
   // tables
   config_t config = config_t(get_self(), get_self().value);
@@ -105,39 +106,11 @@ private:
   polls_t polls = polls_t(get_self(), get_self().value);
 
   // checks if user has voted already to pollid
-  bool has_voted(name user, uint64_t pollid)
-  {
-    auto idx = cvotes.get_index<"user"_n>();
-
-    for (auto itr = idx.begin(); itr != idx.end(); itr++)
-    {
-      if (itr->user == user && itr->pollid == pollid)
-      {
-        return true;
-      }
-    }
-
-    return false;
-  }
+  bool has_voted(name user, uint64_t pollid);
 
   // checks if poll exists in
-  bool author_exists(vector<Feat> feats, name author)
-  {
-    for (Feat i : feats)
-    {
-      if (i.author == author)
-      {
-        return true;
-      }
-    }
-
-    return false;
-  }
+  bool author_exists(vector<Feat> feats, name author);
 
   // get current ts
-  int64_t now()
-  {
-    return current_time_point().time_since_epoch().count();
-    // return chrono::duration_cast<chrono::milliseconds>(chrono::system_clock::now().time_since_epoch()).count();
-  }
+  int64_t now();
 };

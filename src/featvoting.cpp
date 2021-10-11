@@ -106,10 +106,10 @@ ACTION featvoting::xpolladdfeat(name author, uint64_t pollid)
   require_auth(get_self());
 
   auto itr = polls.find(pollid);
-  auto f = subfeats.find(author.value);
+  auto f = apprfeats.find(author.value);
 
   // check if feat exists
-  check(f != subfeats.end(), "Feature request of author does not exist!");
+  check(f != apprfeats.end(), "Feature request of author does not exist!");
 
   // check if poll exists
   check(itr != polls.end(), "Poll does not exist!");
@@ -121,7 +121,7 @@ ACTION featvoting::xpolladdfeat(name author, uint64_t pollid)
   fx.push_back(Feat{f->author, f->title});
 
   // remove author's feat from submitted ones
-  subfeats.erase(f);
+  apprfeats.erase(f);
 
   // add feat to feats
   polls.modify(itr, get_self(), [&](auto &row)
@@ -151,11 +151,11 @@ ACTION featvoting::xpollremfeat(name author, uint64_t pollid)
                { row.feats = fx; });
 
   // re-add to subfeats
-  subfeats.emplace(get_self(), [&](auto &row)
-                   {
-                     row.author = item->author;
-                     row.title = item->title;
-                   });
+  apprfeats.emplace(get_self(), [&](auto &row)
+                    {
+                      row.author = item->author;
+                      row.title = item->title;
+                    });
 }
 
 // approve a feature request
@@ -186,6 +186,7 @@ ACTION featvoting::xdapprfeat(name author)
 
   auto _vfeats_it = apprfeats.find(author.value);
 
+  // check if author's feat exists or not
   check(_vfeats_it != apprfeats.end(), "Author's feature does not exist!");
   check(subfeats.find(author.value) == subfeats.end(), "Author's feature has already been approved for voting.");
 
@@ -224,6 +225,40 @@ ACTION featvoting::xerasesfeats()
   {
     itr = subfeats.erase(itr);
   }
+}
+
+bool featvoting::has_voted(name user, uint64_t pollid)
+{
+  auto idx = cvotes.get_index<"user"_n>();
+
+  for (auto itr = idx.begin(); itr != idx.end(); itr++)
+  {
+    if (itr->user == user && itr->pollid == pollid)
+    {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+bool featvoting::author_exists(vector<Feat> feats, name author)
+{
+  for (Feat i : feats)
+  {
+    if (i.author == author)
+    {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+// get current ts
+int64_t featvoting::now()
+{
+  return current_time_point().time_since_epoch().count();
 }
 
 EOSIO_DISPATCH(featvoting, (init)(usubmitfeat)(uvote)(xcpoll)(xpolladdfeat)(xpollremfeat)(xapprfeat)(xdapprfeat)(xeraseafeats)(xerasesfeats))

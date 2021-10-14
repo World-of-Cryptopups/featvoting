@@ -33,6 +33,9 @@ ACTION featvoting::usubmitfeat(name author, string title)
   // check if user is registered or not
   check(users.find(author.value) != users.end(), "You are not registered!");
 
+  // check if currently accepting new feature requests
+  check(config.get().acceptfeats, "Currently not accepting new feature requests.");
+
   // check if author has already submitted a feature request
   check(subfeats.find(author.value) == subfeats.end(), "You have already submitted a feature request!");
 
@@ -57,6 +60,10 @@ ACTION featvoting::uvote(name user, name author, uint64_t pollid)
   // check if author exists in poll
   check(author_exists(p_itr->feats, author), "Author does not exist in poll!");
 
+  // check poll dates
+  check(p_itr->startdate < now(), "Voting did not start yet!");
+  check(p_itr->enddate > now(), "Voting is already over!");
+
   // check if user has voted to poll
   check(has_voted(user, pollid), "You have already voted!");
 
@@ -73,6 +80,32 @@ ACTION featvoting::uvote(name user, name author, uint64_t pollid)
                    row.feat_author = author;
                    row.pollid = pollid;
                  });
+}
+
+// remove feat from submitted ones
+ACTION featvoting::xremsubfeat(name author)
+{
+  require_auth(get_self());
+
+  auto itr = subfeats.find(author.value);
+
+  // check if author exists
+  check(itr != subfeats.end(), "Author's feat does not exist!");
+
+  // remove feat from submitted ones
+  subfeats.erase(itr);
+}
+
+// set if accepting new feature requests
+ACTION featvoting::xsetaccfeats(bool accept)
+{
+  require_auth(get_self());
+
+  config_s current_config = config.get();
+  current_config.acceptfeats = accept;
+
+  // set new config
+  config.set(current_config, get_self());
 }
 
 // create a poll

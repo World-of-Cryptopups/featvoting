@@ -26,6 +26,8 @@ public:
   ACTION uvote(name voter, name author, uint64_t pollid);
 
   // admin actions
+  ACTION xremsubfeat(name author);
+  ACTION xsetaccfeats(bool accept);
   ACTION xcpoll(string title, string description, int64_t startdate, int64_t enddate);
   ACTION xpolladdfeat(name author, uint64_t pollid);
   ACTION xpollremfeat(name author, uint64_t pollid);
@@ -86,6 +88,7 @@ private:
   {
     uint64_t pollscounter = 100000;
     uint64_t votescounter = 100000;
+    bool acceptfeats = false; // is accepting new feature requests?
   };
 
   // types

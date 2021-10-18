@@ -13,15 +13,13 @@ ACTION featvoting::ureguser(name user)
 {
   require_auth(user);
 
-  users_t _users(get_self(), get_first_receiver().value);
+  auto it = users.find(user.value);
 
-  auto it = _users.find(user.value);
-
-  if (it == _users.end())
+  if (it == users.end())
   {
     // user is not in table
-    _users.emplace(user, [&](auto &row)
-                   { row.key = user; });
+    users.emplace(user, [&](auto &row)
+                  { row.key = user; });
   }
 }
 
